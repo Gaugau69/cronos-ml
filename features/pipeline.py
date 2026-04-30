@@ -324,12 +324,21 @@ def build_dataset(
     if save_dir:
         save_dir = Path(save_dir)
         save_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Sauvegarde X complet
         np.save(save_dir / "X.npy", X)
+        
+        # Sauvegarde les paires JEPA séparément
+        X_ctx, X_tgt = get_targets(X, horizon=1)
+        np.save(save_dir / "X_ctx.npy", X_ctx)
+        np.save(save_dir / "X_tgt.npy", X_tgt)
+        
         meta.to_csv(save_dir / "meta.csv", index=False)
         import json
         with open(save_dir / "norm_stats.json", "w") as f:
             json.dump(stats, f, indent=2)
         print(f"  → Sauvegardé dans {save_dir}/")
+        print(f"  → X_ctx : {X_ctx.shape}, X_tgt : {X_tgt.shape}")
 
     return X, meta, stats
 
