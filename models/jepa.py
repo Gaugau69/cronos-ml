@@ -85,8 +85,8 @@ def vicreg_loss(
 
     # ── 2. Variance : std de chaque dimension ≥ 1 ──
     # Si std < 1 → les représentations s'effondrent → on pénalise
-    std_pred = torch.sqrt(z_pred.var(dim=0) + 1e-4)
-    std_tgt  = torch.sqrt(z_tgt.var(dim=0)  + 1e-4)
+    std_pred = torch.sqrt(z_pred.var(dim=0, correction=0) + 1e-4)
+    std_tgt  = torch.sqrt(z_tgt.var(dim=0,  correction=0) + 1e-4)
     var_loss = F.relu(1 - std_pred).mean() + F.relu(1 - std_tgt).mean()
 
     # ── 3. Covariance : les dimensions doivent être décorrélées ──
@@ -95,8 +95,8 @@ def vicreg_loss(
     z_tgt_centered  = z_tgt  - z_tgt.mean(dim=0)
 
     # Matrices de covariance : (d, d)
-    cov_pred = (z_pred_centered.T @ z_pred_centered) / (batch - 1)
-    cov_tgt  = (z_tgt_centered.T  @ z_tgt_centered)  / (batch - 1)
+    cov_pred = (z_pred_centered.T @ z_pred_centered) / max(batch - 1, 1)
+    cov_tgt  = (z_tgt_centered.T  @ z_tgt_centered)  / max(batch - 1, 1)
 
     # On veut que les éléments hors-diagonale soient proches de 0
     def off_diagonal(mat):
