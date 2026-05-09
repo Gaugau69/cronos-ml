@@ -2,7 +2,7 @@
 training/train.py — Boucle d'entraînement CRONOS JEPA v2
 
 Usage :
-    python -m training.train --data data/processed --epochs 300
+    python -m training.train --data data/processed --epochs 300 --log_every 10
 """
 
 import argparse

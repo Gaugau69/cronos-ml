@@ -1,5 +1,8 @@
 """
-ml/features.py — Pipeline de feature engineering pour CRONOS.
+features/pipeline.py — Pipeline de feature engineering pour CRONOS.
+
+"python -m features.pipeline --daily data/raw/daily_metrics_rows.csv --activities data/raw/activities_rows.csv --window 14 --save data/processed"
+
 
 Construit le tenseur (N_windows, L, F) pour le modèle JEPA :
   - N_windows : nombre de fenêtres glissantes disponibles
@@ -79,9 +82,12 @@ def load_data(
     daily = pd.read_csv(daily_path, parse_dates=["date"])
     acts  = pd.read_csv(activities_path, parse_dates=["date"])
 
+    user_col_daily = "user_name" if "user_name" in daily.columns else "user"
+    user_col_acts  = "user_name" if "user_name" in acts.columns  else "user"
+
     if user:
-        daily = daily[daily["user"] == user].copy()
-        acts  = acts[acts["user"] == user].copy()
+        daily = daily[daily[user_col_daily] == user].copy()
+        acts  = acts[acts[user_col_acts]  == user].copy()
 
     daily = daily.sort_values("date").reset_index(drop=True)
     acts  = acts.sort_values("date").reset_index(drop=True)
@@ -302,23 +308,49 @@ def build_dataset(
         stats  : dict des stats de normalisation (à sauvegarder pour l'inférence)
     """
     print(f"[CRONOS] Chargement des données pour {user or 'tous les users'}...")
-    daily, acts = load_data(daily_path, activities_path, user=user)
-    print(f"  → {len(daily)} jours, {len(acts)} activités")
+    daily_all, acts_all = load_data(daily_path, activities_path, user=None)
 
-    print("[CRONOS] Agrégation des activités...")
-    acts_agg = aggregate_activities(acts)
+    user_col = "user_name" if "user_name" in daily_all.columns else "user"
+    users = [user] if user else daily_all[user_col].unique().tolist()
+    print(f"  → {len(daily_all)} jours, {len(acts_all)} activités | {len(users)} user(s) : {users}")
 
-    print("[CRONOS] Construction des features journalières...")
-    df = build_daily_features(daily, acts_agg)
-    print(f"  → {len(df)} jours avec features")
+    all_windows, all_metas, all_stats = [], [], {}
 
-    print("[CRONOS] Normalisation robuste par athlète...")
-    stats = compute_normalization_stats(df)
-    df_norm = normalize(df, stats)
+    for u in users:
+        print(f"\n[CRONOS] Traitement de {u}...")
+        daily = daily_all[daily_all[user_col] == u].copy()
+        acts_col = "user_name" if "user_name" in acts_all.columns else "user"
+        acts = acts_all[acts_all[acts_col] == u].copy()  # ← manquait cette ligne !
+        
+        if len(daily) < window:
+            print(f"  ⚠ Pas assez de données ({len(daily)} jours) — ignoré")
+            continue
 
-    print(f"[CRONOS] Fenêtres glissantes (L={window}, step={step})...")
-    X, meta = build_windows(df_norm, window=window, step=step)
-    print(f"  → {X.shape[0]} fenêtres — shape finale : {X.shape}")
+        acts_agg = aggregate_activities(acts)
+        df = build_daily_features(daily, acts_agg)
+        print(f"  → {len(df)} jours | {df['is_rest_day'].sum():.0f} repos | {(1-df['is_rest_day']).sum():.0f} séances")
+
+        stats_u = compute_normalization_stats(df)
+        df_norm = normalize(df, stats_u)
+        X_u, meta_u = build_windows(df_norm, window=window, step=step)
+
+        if len(X_u) == 0:
+            print(f"  ⚠ Aucune fenêtre valide — ignoré")
+            continue
+
+        meta_u["user"] = u
+        all_windows.append(X_u)
+        all_metas.append(meta_u)
+        all_stats[u] = stats_u
+        print(f"  → {X_u.shape[0]} fenêtres")
+
+    if not all_windows:
+        raise ValueError("Aucune fenêtre valide — vérifiez les données")
+
+    X    = np.concatenate(all_windows, axis=0).astype(np.float32)
+    meta = pd.concat(all_metas, ignore_index=True)
+    stats = all_stats
+    print(f"\n[CRONOS] Dataset final : {X.shape[0]} fenêtres — shape : {X.shape}")
 
     # Sauvegarde optionnelle
     if save_dir:
@@ -362,9 +394,12 @@ def describe_dataset(X: np.ndarray, meta: pd.DataFrame) -> None:
     print(f"\nFeatures :")
     for i, name in enumerate(FEATURE_NAMES):
         vals = X[:, :, i].flatten()
-        vals = vals[vals != 0]
-        if len(vals) > 0:
-            print(f"  [{i:2d}] {name:20s} — mean={vals.mean():.3f}, std={vals.std():.3f}")
+        if name == "is_rest_day":
+            print(f"  [{i:2d}] {name:20s} — repos={vals.mean()*100:.1f}% | séances={(1-vals.mean())*100:.1f}%")
+        else:
+            vals_nonzero = vals[vals != 0]
+            if len(vals_nonzero) > 0:
+                print(f"  [{i:2d}] {name:20s} — mean={vals_nonzero.mean():.3f}, std={vals_nonzero.std():.3f}")
     print(f"{'='*50}\n")
 
 

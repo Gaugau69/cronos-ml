@@ -1,50 +1,302 @@
 {
-  "hrv_rmssd": {
-    "median": 0.0,
-    "iqr": 1.0
+  "Olivier": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 56.0,
+      "iqr": 6.0
+    },
+    "sleep_duration": {
+      "median": 8.433333333333334,
+      "iqr": 1.8999999999999995
+    },
+    "sleep_quality": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_mean": {
+      "median": 151.0,
+      "iqr": 17.0
+    },
+    "hr_drift": {
+      "median": 0.14935064935064934,
+      "iqr": 0.06809008718114305
+    },
+    "pace_mean": {
+      "median": 2.905555555555556,
+      "iqr": 0.3888888888888893
+    },
+    "pace_hr_ratio": {
+      "median": 0.01896766169154229,
+      "iqr": 0.0027379053694843204
+    },
+    "duration": {
+      "median": 68.30000000000001,
+      "iqr": 14.899999999999991
+    },
+    "elevation_gain": {
+      "median": 33.0,
+      "iqr": 22.0
+    },
+    "training_load": {
+      "median": 98.37100000000001,
+      "iqr": 27.48700000000001
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
   },
-  "hr_rest": {
-    "median": 52.0,
-    "iqr": 9.0
+  "Ludo": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 55.0,
+      "iqr": 4.0
+    },
+    "sleep_duration": {
+      "median": 6.933333333333334,
+      "iqr": 1.6000000000000005
+    },
+    "sleep_quality": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_mean": {
+      "median": 151.5,
+      "iqr": 8.0
+    },
+    "hr_drift": {
+      "median": 0.13087671850349336,
+      "iqr": 0.052820431410807306
+    },
+    "pace_mean": {
+      "median": 2.626388888888889,
+      "iqr": 0.4520833333333334
+    },
+    "pace_hr_ratio": {
+      "median": 0.01732172740271632,
+      "iqr": 0.003216343836220603
+    },
+    "duration": {
+      "median": 47.599999999999994,
+      "iqr": 22.5
+    },
+    "elevation_gain": {
+      "median": 29.0,
+      "iqr": 83.0
+    },
+    "training_load": {
+      "median": 72.481,
+      "iqr": 34.698
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
   },
-  "sleep_duration": {
-    "median": 8.45,
-    "iqr": 1.666666666666667
+  "Thomas": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 43.0,
+      "iqr": 3.0
+    },
+    "sleep_duration": {
+      "median": 7.916666666666667,
+      "iqr": 0.9666666666666668
+    },
+    "sleep_quality": {
+      "median": 85.0,
+      "iqr": 12.0
+    },
+    "hr_mean": {
+      "median": 119.5,
+      "iqr": 47.5
+    },
+    "hr_drift": {
+      "median": 0.20579316114190108,
+      "iqr": 0.12862068159948384
+    },
+    "pace_mean": {
+      "median": 2.784722222222222,
+      "iqr": 1.6874999999999998
+    },
+    "pace_hr_ratio": {
+      "median": 0.02167961653655423,
+      "iqr": 0.006537853032951069
+    },
+    "duration": {
+      "median": 54.150000000000006,
+      "iqr": 52.324999999999996
+    },
+    "elevation_gain": {
+      "median": 83.0,
+      "iqr": 100.5
+    },
+    "training_load": {
+      "median": 63.0275,
+      "iqr": 46.6285
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
   },
-  "sleep_quality": {
-    "median": 0.0,
-    "iqr": 1.0
+  "Ang\u00e9lique": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 48.0,
+      "iqr": 4.0
+    },
+    "sleep_duration": {
+      "median": 9.633333333333333,
+      "iqr": 2.8666666666666654
+    },
+    "sleep_quality": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_mean": {
+      "median": 125.0,
+      "iqr": 21.5
+    },
+    "hr_drift": {
+      "median": 0.14634146341463414,
+      "iqr": 0.06842268842268842
+    },
+    "pace_mean": {
+      "median": 2.6750000000000003,
+      "iqr": 0.2708333333333335
+    },
+    "pace_hr_ratio": {
+      "median": 0.021629901960784313,
+      "iqr": 0.004008678501743208
+    },
+    "duration": {
+      "median": 53.0,
+      "iqr": 20.85
+    },
+    "elevation_gain": {
+      "median": 44.5,
+      "iqr": 56.25
+    },
+    "training_load": {
+      "median": 69.16,
+      "iqr": 32.882999999999996
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
   },
-  "hr_mean": {
-    "median": 133.0,
-    "iqr": 23.0
+  "Emmanuel": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 45.0,
+      "iqr": 4.0
+    },
+    "sleep_duration": {
+      "median": 7.266666666666667,
+      "iqr": 1.7458333333333345
+    },
+    "sleep_quality": {
+      "median": 78.0,
+      "iqr": 16.0
+    },
+    "hr_mean": {
+      "median": 129.0,
+      "iqr": 15.0
+    },
+    "hr_drift": {
+      "median": 0.1732283464566929,
+      "iqr": 0.12201951656613341
+    },
+    "pace_mean": {
+      "median": 3.1791666666666663,
+      "iqr": 0.4680555555555559
+    },
+    "pace_hr_ratio": {
+      "median": 0.024484767025089605,
+      "iqr": 0.003147995882991684
+    },
+    "duration": {
+      "median": 72.6,
+      "iqr": 58.375
+    },
+    "elevation_gain": {
+      "median": 79.1550000011921,
+      "iqr": 144.4549999907612
+    },
+    "training_load": {
+      "median": 95.24249999999998,
+      "iqr": 77.60250000000002
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
   },
-  "hr_drift": {
-    "median": 0.1777507733097658,
-    "iqr": 0.10694553665148843
-  },
-  "pace_mean": {
-    "median": 2.6875,
-    "iqr": 0.25740740740740753
-  },
-  "pace_hr_ratio": {
-    "median": 0.01970609283324329,
-    "iqr": 0.004698646446225734
-  },
-  "duration": {
-    "median": 58.349999999999994,
-    "iqr": 54.27499999999999
-  },
-  "elevation_gain": {
-    "median": 45.5,
-    "iqr": 96.25
-  },
-  "training_load": {
-    "median": 80.4835,
-    "iqr": 75.19224999999997
-  },
-  "is_rest_day": {
-    "median": 0.0,
-    "iqr": 1.0
+  "Laurent": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 57.0,
+      "iqr": 5.0
+    },
+    "sleep_duration": {
+      "median": 8.5,
+      "iqr": 1.708333333333334
+    },
+    "sleep_quality": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_mean": {
+      "median": 144.0,
+      "iqr": 10.0
+    },
+    "hr_drift": {
+      "median": 0.17266187050359713,
+      "iqr": 0.0623276364652984
+    },
+    "pace_mean": {
+      "median": 2.545138888888889,
+      "iqr": 0.27222222222222214
+    },
+    "pace_hr_ratio": {
+      "median": 0.01762031107727673,
+      "iqr": 0.0012561714017485688
+    },
+    "duration": {
+      "median": 52.5,
+      "iqr": 27.39999999999999
+    },
+    "elevation_gain": {
+      "median": 25.0,
+      "iqr": 35.0
+    },
+    "training_load": {
+      "median": 77.15400000000001,
+      "iqr": 39.504000000000005
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
   }
 }
