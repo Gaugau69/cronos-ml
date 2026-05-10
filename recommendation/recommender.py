@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recommendation.session_types import SESSION_CATALOGUE, N_SESSIONS, get_session_embeddings
+from recommendation.session_types_v2 import SESSION_CATALOGUE, N_SESSIONS, get_session_embeddings
 from recommendation.encoders import AthleteProfileEncoder, RaceContextEncoder
 
 

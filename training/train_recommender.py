@@ -30,7 +30,7 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from models.jepa import JEPA
 from recommendation.recommender import CRONOSRecommender
 from recommendation.encoders import encode_athlete_profile, encode_race_context
-from recommendation.session_types import SESSION_CATALOGUE, N_SESSIONS
+from recommendation.session_types_v2 import SESSION_CATALOGUE, N_SESSIONS
 
 
 # ─────────────────────────────────────────────────────────────
