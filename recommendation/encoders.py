@@ -98,7 +98,7 @@ class RaceContextEncoder(nn.Module):
 
 LEVEL_MAP    = {"debutant": 0, "intermediaire": 1, "avance": 2, "elite": 3}
 SPORT_MAP    = {"route": 0, "trail": 1, "ultra": 2, "triathlon": 3, "mixte": 4}
-GOAL_MAP     = {"finir": 0, "chrono": 1, "podium": 2, "progression": 3}
+GOAL_MAP     = {"plaisir": 0, "progression": 1, "chrono": 2, "competition": 3, "finir": 0, "podium": 3}
 DIST_MAP     = {"5k": 0, "10k": 1, "semi": 2, "marathon": 3, "ultra": 4}
 PRIORITY_MAP = {"C": 0, "B": 1, "A": 2}
 RACE_GOAL_MAP= {"finir": 0, "chrono": 1, "podium": 2}
