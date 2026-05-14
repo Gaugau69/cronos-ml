@@ -30,7 +30,7 @@ class SessionScorer(nn.Module):
         d_jepa: int = 64,
         d_profile: int = 32,
         d_race: int = 16,
-        d_session: int = 7,
+        d_session: int = 10,
         d_hidden: int = 128,
         dropout: float = 0.1,
     ):

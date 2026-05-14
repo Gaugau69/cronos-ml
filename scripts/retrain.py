@@ -78,7 +78,7 @@ def retrain(
     # ── 4. Réentraînement Recommender ──
     if not skip_rec:
         ok = run(
-            f'{python} -m training.train_recommender --epochs {epochs_rec} --log_every 20',
+            f'{python} -m training.train_recommender --epochs {epochs_rec} --log_every 20 --profiles data/raw/profiles.json --races data/raw/races.json',
             f"4/4 Réentraînement Recommender ({epochs_rec} epochs)"
         )
         if not ok:
