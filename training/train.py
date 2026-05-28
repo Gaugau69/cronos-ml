@@ -1,8 +1,6 @@
 """
 training/train.py — Boucle d'entraînement CRONOS JEPA v2
-
-Usage :
-    python -m training.train --data data/processed --epochs 300 --log_every 10
+Optimisé Apple Silicon M5 Pro (MPS)
 """
 
 import argparse
@@ -16,6 +14,28 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset, random_split
 
 from models.jepa import JEPA
+
+
+# ─────────────────────────────────────────────────────────────
+# Device
+# ─────────────────────────────────────────────────────────────
+
+def get_device(device: str = "auto") -> torch.device:
+    if device == "auto":
+        if torch.cuda.is_available():
+            d = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            d = torch.device("mps")
+        else:
+            d = torch.device("cpu")
+    else:
+        d = torch.device(device)
+    print(f"Device : {d}")
+    if d.type == "mps":
+        # Active les optimisations MPS
+        os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
+        print("✓ MPS optimisations activées")
+    return d
 
 
 # ─────────────────────────────────────────────────────────────
@@ -39,7 +59,7 @@ class JEPADataset(Dataset):
 
 
 # ─────────────────────────────────────────────────────────────
-# Scheduler : warmup + cosine decay
+# Schedulers
 # ─────────────────────────────────────────────────────────────
 
 def get_lr(step, total_steps, lr_max, lr_min, warmup_steps):
@@ -50,22 +70,18 @@ def get_lr(step, total_steps, lr_max, lr_min, warmup_steps):
 
 
 def get_ema_tau(step, total_steps, tau_base=0.996, tau_final=0.9999):
-    """
-    EMA tau augmente progressivement pendant l'entraînement.
-    Commence avec tau faible (mise à jour rapide) puis ralentit (cible stable).
-    """
     progress = step / max(total_steps, 1)
     return tau_final - (tau_final - tau_base) * (math.cos(math.pi * progress) + 1) / 2
 
 
 # ─────────────────────────────────────────────────────────────
-# Boucle d'entraînement
+# Entraînement
 # ─────────────────────────────────────────────────────────────
 
 def train(
     data_dir: str = "data/processed",
     epochs: int = 300,
-    batch_size: int = 32,
+    batch_size: int = 128,        # ↑ M5 Pro supporte des batch plus grands
     lr_max: float = 3e-4,
     lr_min: float = 1e-5,
     warmup_epochs: int = 20,
@@ -79,11 +95,10 @@ def train(
     save_dir: str = "checkpoints",
     device: str = "auto",
     log_every: int = 10,
+    num_workers: int = 4,          # ↑ M5 Pro a 12 cores
+    pin_memory: bool = False,      # False pour MPS
 ):
-    # ── Device ──
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Device : {device}")
+    dev = get_device(device)
 
     # ── Dataset ──
     dataset = JEPADataset(data_dir)
@@ -93,9 +108,20 @@ def train(
         dataset, [n_train, n_val],
         generator=torch.Generator().manual_seed(42)
     )
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True,  drop_last=True,  num_workers=0)
-    val_loader   = DataLoader(val_set,   batch_size=batch_size, shuffle=False, drop_last=False, num_workers=0)
-    print(f"Train : {n_train} | Val : {n_val}")
+
+    # Sur MPS, pin_memory=False car la mémoire est unifiée
+    _pin = pin_memory and dev.type == "cuda"
+    train_loader = DataLoader(
+        train_set, batch_size=batch_size, shuffle=True,
+        drop_last=True, num_workers=num_workers,
+        pin_memory=_pin, persistent_workers=num_workers > 0
+    )
+    val_loader = DataLoader(
+        val_set, batch_size=batch_size * 2, shuffle=False,
+        drop_last=False, num_workers=num_workers,
+        pin_memory=_pin, persistent_workers=num_workers > 0
+    )
+    print(f"Train : {n_train} | Val : {n_val} | Batch : {batch_size}")
 
     # ── Modèle ──
     model = JEPA(
@@ -104,7 +130,7 @@ def train(
         drop_path_rate=drop_path_rate,
         ema_tau=ema_tau,
         mask_ratio=mask_ratio,
-    ).to(device)
+    ).to(dev)
 
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total     = sum(p.numel() for p in model.parameters())
@@ -116,17 +142,17 @@ def train(
         lr=lr_max,
         weight_decay=weight_decay,
         betas=(0.9, 0.95),
+        fused=False,  # fused non supporté sur MPS
     )
 
-    # ── Steps ──
-    total_steps   = epochs * len(train_loader)
-    warmup_steps  = warmup_epochs * len(train_loader)
+    total_steps  = epochs * len(train_loader)
+    warmup_steps = warmup_epochs * len(train_loader)
 
     os.makedirs(save_dir, exist_ok=True)
     best_val_loss = float("inf")
     step = 0
+    lr = lr_max
 
-    # ─────────────────────────────────────────────────────────
     print(f"\nDébut entraînement — {epochs} epochs\n")
 
     for epoch in range(1, epochs + 1):
@@ -137,24 +163,20 @@ def train(
         train_inv, train_var, train_cov = [], [], []
 
         for x_ctx, x_tgt in train_loader:
-            x_ctx = x_ctx.to(device)
-            x_tgt = x_tgt.to(device)
+            x_ctx = x_ctx.to(dev, non_blocking=True)
+            x_tgt = x_tgt.to(dev, non_blocking=True)
 
-            # LR dynamique
             lr = get_lr(step, total_steps, lr_max, lr_min, warmup_steps)
             for pg in optimizer.param_groups:
                 pg["lr"] = lr
 
-            # Forward
             _, _, loss, losses = model(x_ctx, x_tgt, use_masking=True)
 
-            # Backward
             optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
-            # EMA update avec tau progressif
             tau = get_ema_tau(step, total_steps, ema_tau, 0.9999)
             model.update_target_encoder(tau=tau)
 
@@ -170,15 +192,14 @@ def train(
 
         with torch.no_grad():
             for x_ctx, x_tgt in val_loader:
-                x_ctx = x_ctx.to(device)
-                x_tgt = x_tgt.to(device)
+                x_ctx = x_ctx.to(dev, non_blocking=True)
+                x_tgt = x_tgt.to(dev, non_blocking=True)
                 _, _, loss, losses = model(x_ctx, x_tgt, use_masking=False)
                 val_losses.append(losses["total"])
 
         t_loss = sum(train_losses) / len(train_losses)
         v_loss = sum(val_losses)   / len(val_losses)
 
-        # ── Log ──
         if epoch % log_every == 0 or epoch == 1:
             inv = sum(train_inv) / len(train_inv)
             var = sum(train_var) / len(train_var)
@@ -190,7 +211,6 @@ def train(
                 f"LR {lr:.2e} | τ {tau:.4f}"
             )
 
-        # ── Sauvegarde ──
         if v_loss < best_val_loss:
             best_val_loss = v_loss
             torch.save({
@@ -211,15 +231,11 @@ def train(
     print(f"  Modèle sauvegardé  : {save_dir}/best_model.pt")
 
 
-# ─────────────────────────────────────────────────────────────
-# Entry point
-# ─────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data",           type=str,   default="data/processed")
     parser.add_argument("--epochs",         type=int,   default=300)
-    parser.add_argument("--batch_size",     type=int,   default=32)
+    parser.add_argument("--batch_size",     type=int,   default=128)
     parser.add_argument("--lr_max",         type=float, default=3e-4)
     parser.add_argument("--lr_min",         type=float, default=1e-5)
     parser.add_argument("--warmup",         type=int,   default=20)
@@ -231,6 +247,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_dir",       type=str,   default="checkpoints")
     parser.add_argument("--device",         type=str,   default="auto")
     parser.add_argument("--log_every",      type=int,   default=10)
+    parser.add_argument("--num_workers",    type=int,   default=4)
     args = parser.parse_args()
 
     train(
@@ -248,4 +265,5 @@ if __name__ == "__main__":
         save_dir=args.save_dir,
         device=args.device,
         log_every=args.log_every,
+        num_workers=args.num_workers,
     )

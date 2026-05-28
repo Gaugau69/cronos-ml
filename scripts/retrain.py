@@ -1,19 +1,12 @@
 """
 scripts/retrain.py — Réentraînement automatique hebdomadaire de CRONOS.
-
-Lance l'export Supabase → pipeline features → réentraînement JEPA → réentraînement recommender.
-
-Usage :
-    python -m scripts.retrain --db_url postgresql://...
-    python -m scripts.retrain  # utilise DATABASE_URL depuis .env
+Optimisé Apple Silicon M5 Pro (MPS)
 """
-
 import argparse
 import os
 import subprocess
 import sys
 from datetime import datetime
-from pathlib import Path
 
 
 def run(cmd: str, description: str) -> bool:
@@ -34,6 +27,8 @@ def retrain(
     epochs_rec:  int = 100,
     skip_jepa:   bool = False,
     skip_rec:    bool = False,
+    batch_size:  int = 128,
+    num_workers: int = 4,
 ):
     start = datetime.now()
     print(f"\n{'='*55}")
@@ -67,7 +62,13 @@ def retrain(
     # ── 3. Réentraînement JEPA ──
     if not skip_jepa:
         ok = run(
-            f'{python} -m training.train --data data/processed --epochs {epochs_jepa} --log_every 50',
+            f'{python} -m training.train '
+            f'--data data/processed '
+            f'--epochs {epochs_jepa} '
+            f'--batch_size {batch_size} '
+            f'--num_workers {num_workers} '
+            f'--log_every 50 '
+            f'--device auto',
             f"3/4 Réentraînement JEPA ({epochs_jepa} epochs)"
         )
         if not ok:
@@ -78,7 +79,14 @@ def retrain(
     # ── 4. Réentraînement Recommender ──
     if not skip_rec:
         ok = run(
-            f'{python} -m training.train_recommender --epochs {epochs_rec} --log_every 20 --profiles data/raw/profiles.json --races data/raw/races.json',
+            f'{python} -m training.train_recommender '
+            f'--epochs {epochs_rec} '
+            f'--batch_size {batch_size} '
+            f'--num_workers {num_workers} '
+            f'--log_every 20 '
+            f'--profiles data/raw/profiles.json '
+            f'--races data/raw/races.json '
+            f'--device auto',
             f"4/4 Réentraînement Recommender ({epochs_rec} epochs)"
         )
         if not ok:
@@ -100,6 +108,8 @@ if __name__ == "__main__":
     parser.add_argument("--epochs_rec",  type=int,  default=100)
     parser.add_argument("--skip_jepa",   action="store_true")
     parser.add_argument("--skip_rec",    action="store_true")
+    parser.add_argument("--batch_size",  type=int,  default=128)
+    parser.add_argument("--num_workers", type=int,  default=4)
     args = parser.parse_args()
 
     retrain(
@@ -108,4 +118,6 @@ if __name__ == "__main__":
         epochs_rec=args.epochs_rec,
         skip_jepa=args.skip_jepa,
         skip_rec=args.skip_rec,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
     )
