@@ -49,50 +49,50 @@
       "iqr": 1.0
     }
   },
-  "Olivier": {
+  "Tanguy": {
     "hrv_rmssd": {
       "median": 0.0,
       "iqr": 1.0
     },
     "hr_rest": {
-      "median": 56.0,
-      "iqr": 6.0
+      "median": 45.0,
+      "iqr": 5.0
     },
     "sleep_duration": {
-      "median": 8.433333333333334,
-      "iqr": 1.8999999999999995
+      "median": 5.375,
+      "iqr": 1.3708333333333336
     },
     "sleep_quality": {
-      "median": 0.0,
-      "iqr": 1.0
+      "median": 67.5,
+      "iqr": 19.25
     },
     "hr_mean": {
-      "median": 151.0,
-      "iqr": 17.0
+      "median": 157.5,
+      "iqr": 18.25
     },
     "hr_drift": {
-      "median": 0.14935064935064934,
-      "iqr": 0.06809008718114305
+      "median": 0.11580307641002126,
+      "iqr": 0.076044678621641
     },
     "pace_mean": {
-      "median": 2.905555555555556,
-      "iqr": 0.3888888888888893
+      "median": 3.033333333333333,
+      "iqr": 0.35763888888888884
     },
     "pace_hr_ratio": {
-      "median": 0.01896766169154229,
-      "iqr": 0.0027379053694843204
+      "median": 0.019381780915803497,
+      "iqr": 0.0006840358326126311
     },
     "duration": {
-      "median": 68.30000000000001,
-      "iqr": 14.899999999999991
+      "median": 50.400000000000006,
+      "iqr": 14.825000000000003
     },
     "elevation_gain": {
-      "median": 33.0,
-      "iqr": 22.0
+      "median": 34.0,
+      "iqr": 19.0
     },
     "training_load": {
-      "median": 98.37100000000001,
-      "iqr": 27.48700000000001
+      "median": 86.06700000000001,
+      "iqr": 17.197000000000003
     },
     "is_rest_day": {
       "median": 0.0,
@@ -149,6 +149,56 @@
       "iqr": 1.0
     }
   },
+  "Laurent": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 56.0,
+      "iqr": 5.0
+    },
+    "sleep_duration": {
+      "median": 8.516666666666667,
+      "iqr": 1.708333333333334
+    },
+    "sleep_quality": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_mean": {
+      "median": 144.0,
+      "iqr": 10.0
+    },
+    "hr_drift": {
+      "median": 0.17299760191846525,
+      "iqr": 0.06202292322941613
+    },
+    "pace_mean": {
+      "median": 2.5513888888888885,
+      "iqr": 0.2694444444444444
+    },
+    "pace_hr_ratio": {
+      "median": 0.01762099522835719,
+      "iqr": 0.0012413378860083799
+    },
+    "duration": {
+      "median": 52.7,
+      "iqr": 26.799999999999997
+    },
+    "elevation_gain": {
+      "median": 25.0,
+      "iqr": 34.5
+    },
+    "training_load": {
+      "median": 77.45700000000001,
+      "iqr": 39.947250000000004
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
+  },
   "Ludo": {
     "hrv_rmssd": {
       "median": 0.0,
@@ -199,106 +249,6 @@
       "iqr": 1.0
     }
   },
-  "Laurent": {
-    "hrv_rmssd": {
-      "median": 0.0,
-      "iqr": 1.0
-    },
-    "hr_rest": {
-      "median": 56.5,
-      "iqr": 5.0
-    },
-    "sleep_duration": {
-      "median": 8.5,
-      "iqr": 1.708333333333334
-    },
-    "sleep_quality": {
-      "median": 0.0,
-      "iqr": 1.0
-    },
-    "hr_mean": {
-      "median": 144.0,
-      "iqr": 10.0
-    },
-    "hr_drift": {
-      "median": 0.17266187050359713,
-      "iqr": 0.0623276364652984
-    },
-    "pace_mean": {
-      "median": 2.545138888888889,
-      "iqr": 0.27222222222222214
-    },
-    "pace_hr_ratio": {
-      "median": 0.01762031107727673,
-      "iqr": 0.0012561714017485688
-    },
-    "duration": {
-      "median": 52.5,
-      "iqr": 27.39999999999999
-    },
-    "elevation_gain": {
-      "median": 25.0,
-      "iqr": 35.0
-    },
-    "training_load": {
-      "median": 77.15400000000001,
-      "iqr": 39.504000000000005
-    },
-    "is_rest_day": {
-      "median": 0.0,
-      "iqr": 1.0
-    }
-  },
-  "Tanguy": {
-    "hrv_rmssd": {
-      "median": 0.0,
-      "iqr": 1.0
-    },
-    "hr_rest": {
-      "median": 45.0,
-      "iqr": 5.0
-    },
-    "sleep_duration": {
-      "median": 5.375,
-      "iqr": 1.3708333333333336
-    },
-    "sleep_quality": {
-      "median": 67.5,
-      "iqr": 19.25
-    },
-    "hr_mean": {
-      "median": 157.5,
-      "iqr": 18.25
-    },
-    "hr_drift": {
-      "median": 0.11580307641002126,
-      "iqr": 0.076044678621641
-    },
-    "pace_mean": {
-      "median": 3.033333333333333,
-      "iqr": 0.35763888888888884
-    },
-    "pace_hr_ratio": {
-      "median": 0.019381780915803497,
-      "iqr": 0.0006840358326126311
-    },
-    "duration": {
-      "median": 50.400000000000006,
-      "iqr": 14.825000000000003
-    },
-    "elevation_gain": {
-      "median": 34.0,
-      "iqr": 19.0
-    },
-    "training_load": {
-      "median": 86.06700000000001,
-      "iqr": 17.197000000000003
-    },
-    "is_rest_day": {
-      "median": 0.0,
-      "iqr": 1.0
-    }
-  },
   "Emmanuel": {
     "hrv_rmssd": {
       "median": 0.0,
@@ -343,6 +293,56 @@
     "training_load": {
       "median": 95.24249999999998,
       "iqr": 77.60250000000002
+    },
+    "is_rest_day": {
+      "median": 0.0,
+      "iqr": 1.0
+    }
+  },
+  "Olivier": {
+    "hrv_rmssd": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_rest": {
+      "median": 56.0,
+      "iqr": 6.0
+    },
+    "sleep_duration": {
+      "median": 8.433333333333334,
+      "iqr": 1.8999999999999995
+    },
+    "sleep_quality": {
+      "median": 0.0,
+      "iqr": 1.0
+    },
+    "hr_mean": {
+      "median": 151.0,
+      "iqr": 17.0
+    },
+    "hr_drift": {
+      "median": 0.14935064935064934,
+      "iqr": 0.06809008718114305
+    },
+    "pace_mean": {
+      "median": 2.905555555555556,
+      "iqr": 0.3888888888888893
+    },
+    "pace_hr_ratio": {
+      "median": 0.01896766169154229,
+      "iqr": 0.0027379053694843204
+    },
+    "duration": {
+      "median": 68.30000000000001,
+      "iqr": 14.899999999999991
+    },
+    "elevation_gain": {
+      "median": 33.0,
+      "iqr": 22.0
+    },
+    "training_load": {
+      "median": 98.37100000000001,
+      "iqr": 27.48700000000001
     },
     "is_rest_day": {
       "median": 0.0,
