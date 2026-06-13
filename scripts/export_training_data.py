@@ -1,20 +1,22 @@
 """
-scripts/export_training_data.py — Export des données Supabase pour l'entraînement CRONOS.
+scripts/export_training_data.py — Export des données Railway pour l'entraînement CRONOS.
 
 Génère :
-    data/rpe.json       — données RPE par activité
-    data/profiles.json  — profils athlètes
-    data/races.json     — courses planifiées
+    data/rpe.json          — données RPE par activité
+    data/profiles.json     — profils athlètes
+    data/races.json        — courses planifiées
+    data/daily_metrics.csv — métriques journalières
+    data/activities.csv    — toutes les activités
 
 Usage :
     python -m scripts.export_training_data
-    python -m scripts.export_training_data --output data/
+    python -m scripts.export_training_data --output data/raw --db_url postgresql://...
 """
 
 import argparse
 import json
 import os
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 import psycopg2
@@ -24,12 +26,10 @@ load_dotenv()
 
 
 def get_connection(database_url: str):
-    """Connexion PostgreSQL via DATABASE_URL."""
     return psycopg2.connect(database_url)
 
 
 def export_rpe(conn, output_dir: Path) -> int:
-    """Exporte les données RPE depuis la table activities."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT
@@ -44,8 +44,8 @@ def export_rpe(conn, output_dir: Path) -> int:
                 a.elevation_gain_m,
                 a.training_effect,
                 a.rpe,
-                u.name AS user_name
-            FROM activities a
+                u.garmin_username AS user_name
+            FROM cronos_activities a
             JOIN users u ON u.id = a.user_id
             WHERE a.rpe IS NOT NULL
             ORDER BY a.date DESC
@@ -61,17 +61,15 @@ def export_rpe(conn, output_dir: Path) -> int:
 
 
 def export_profiles(conn, output_dir: Path) -> int:
-    """Exporte les profils athlètes depuis athlete_profiles."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        # Vérifie si la table existe
         cur.execute("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
-                WHERE table_name = 'athlete_profiles'
+                WHERE table_name = 'cronos_athlete_profiles'
             )
         """)
         if not cur.fetchone()["exists"]:
-            print("  ⚠ Table athlete_profiles inexistante — fichier vide généré")
+            print("  ⚠ Table cronos_athlete_profiles inexistante — fichier vide généré")
             path = output_dir / "profiles.json"
             with open(path, "w") as f:
                 json.dump([], f)
@@ -80,9 +78,9 @@ def export_profiles(conn, output_dir: Path) -> int:
         cur.execute("""
             SELECT
                 ap.*,
-                u.name AS user_name,
+                u.garmin_username AS user_name,
                 u.email AS user_email
-            FROM athlete_profiles ap
+            FROM cronos_athlete_profiles ap
             JOIN users u ON u.id = ap.user_id
             ORDER BY ap.user_id
         """)
@@ -97,16 +95,15 @@ def export_profiles(conn, output_dir: Path) -> int:
 
 
 def export_races(conn, output_dir: Path) -> int:
-    """Exporte les courses planifiées depuis planned_races."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
-                WHERE table_name = 'planned_races'
+                WHERE table_name = 'cronos_planned_races'
             )
         """)
         if not cur.fetchone()["exists"]:
-            print("  ⚠ Table planned_races inexistante — fichier vide généré")
+            print("  ⚠ Table cronos_planned_races inexistante — fichier vide généré")
             path = output_dir / "races.json"
             with open(path, "w") as f:
                 json.dump([], f)
@@ -116,9 +113,9 @@ def export_races(conn, output_dir: Path) -> int:
         cur.execute("""
             SELECT
                 pr.*,
-                u.name AS user_name,
+                u.garmin_username AS user_name,
                 (pr.race_date - CURRENT_DATE) AS days_to_race
-            FROM planned_races pr
+            FROM cronos_planned_races pr
             JOIN users u ON u.id = pr.user_id
             WHERE pr.is_completed = FALSE
               AND pr.race_date >= %s
@@ -135,13 +132,12 @@ def export_races(conn, output_dir: Path) -> int:
 
 
 def export_daily_metrics(conn, output_dir: Path) -> int:
-    """Exporte les métriques journalières pour analyse."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT
                 dm.*,
-                u.name AS user_name
-            FROM daily_metrics dm
+                u.garmin_username AS user_name
+            FROM cronos_daily_metrics dm
             JOIN users u ON u.id = dm.user_id
             ORDER BY dm.date DESC
             LIMIT 10000
@@ -150,7 +146,6 @@ def export_daily_metrics(conn, output_dir: Path) -> int:
 
     path = output_dir / "daily_metrics.csv"
 
-    # Export CSV
     if rows:
         import csv
         with open(path, "w", newline="", encoding="utf-8") as f:
@@ -158,18 +153,19 @@ def export_daily_metrics(conn, output_dir: Path) -> int:
             writer.writeheader()
             writer.writerows(rows)
         print(f"  → {len(rows)} métriques journalières exportées → {path}")
-    
+    else:
+        print("  ⚠ Aucune métrique journalière")
+
     return len(rows)
 
 
 def export_activities(conn, output_dir: Path) -> int:
-    """Exporte toutes les activités pour le pipeline features."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT
                 a.*,
-                u.name AS user_name
-            FROM activities a
+                u.garmin_username AS user_name
+            FROM cronos_activities a
             JOIN users u ON u.id = a.user_id
             ORDER BY a.date DESC
         """)
@@ -184,6 +180,8 @@ def export_activities(conn, output_dir: Path) -> int:
             writer.writeheader()
             writer.writerows(rows)
         print(f"  → {len(rows)} activités exportées → {path}")
+    else:
+        print("  ⚠ Aucune activité")
 
     return len(rows)
 
@@ -192,18 +190,17 @@ def main(output_dir: str = "data", database_url: str = None):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # DATABASE_URL depuis les variables d'environnement ou argument
     db_url = database_url or os.environ.get("DATABASE_URL")
     if not db_url:
         print("❌ DATABASE_URL non défini — ajoutez-le dans .env ou passez --db_url")
         return
 
-    print(f"[CRONOS] Export depuis Supabase → {output_dir}/")
+    print(f"[CRONOS] Export Railway → {output_dir}/")
     print("=" * 50)
 
     try:
         conn = get_connection(db_url)
-        
+
         n_rpe      = export_rpe(conn, output_dir)
         n_profiles = export_profiles(conn, output_dir)
         n_races    = export_races(conn, output_dir)
@@ -222,10 +219,8 @@ def main(output_dir: str = "data", database_url: str = None):
 
         if n_rpe == 0:
             print("\n⚠ Aucun RPE — le recommender utilisera des labels par défaut.")
-            print("  Encourage tes athlètes à noter leurs séances sur le site !")
-
         if n_profiles == 0:
-            print("\n⚠ Aucun profil athlète — encourage tes athlètes à remplir leur profil.")
+            print("\n⚠ Aucun profil athlète — encourage les athlètes à remplir leur profil.")
 
     except Exception as e:
         print(f"❌ Erreur connexion DB : {e}")
@@ -234,8 +229,8 @@ def main(output_dir: str = "data", database_url: str = None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output",  type=str, default="data/raw", help="Dossier de sortie")
-    parser.add_argument("--db_url",  type=str, default=None, help="DATABASE_URL PostgreSQL")
+    parser.add_argument("--output", type=str, default="data/raw", help="Dossier de sortie")
+    parser.add_argument("--db_url", type=str, default=None,       help="DATABASE_URL PostgreSQL")
     args = parser.parse_args()
 
     main(output_dir=args.output, database_url=args.db_url)
