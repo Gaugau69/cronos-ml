@@ -103,40 +103,61 @@ class PredictRequest(BaseModel):
     top_k:        int = 5
 
 
+# Cache en mémoire des modèles — rechargé automatiquement si les checkpoints changent
+_model_cache: dict = {"enc": None, "scorer": None, "mtime_enc": 0.0, "mtime_rec": 0.0}
+
+
+def _get_models():
+    """Charge ou recharge les modèles si les checkpoints ont changé depuis le dernier load."""
+    import torch
+    from pathlib import Path
+    from models.encoder import Encoder
+    from recommendation.recommender import SessionScorer
+
+    ckpt_dir = Path("checkpoints")
+    enc_path  = ckpt_dir / "best_model.pt"
+    rec_path  = ckpt_dir / "best_recommender.pt"
+
+    if not enc_path.exists() or not rec_path.exists():
+        return None, None
+
+    mtime_enc = enc_path.stat().st_mtime
+    mtime_rec = rec_path.stat().st_mtime
+
+    if (mtime_enc != _model_cache["mtime_enc"] or
+            mtime_rec != _model_cache["mtime_rec"] or
+            _model_cache["enc"] is None):
+        log.info("[MODELS] Chargement des checkpoints (nouveaux ou premier load)")
+        enc = Encoder(n_features=22)
+        enc.load_state_dict(torch.load(enc_path, map_location="cpu", weights_only=True), strict=False)
+        enc.eval()
+        scorer = SessionScorer()
+        scorer.load_state_dict(torch.load(rec_path, map_location="cpu", weights_only=True), strict=False)
+        scorer.eval()
+        _model_cache.update({"enc": enc, "scorer": scorer, "mtime_enc": mtime_enc, "mtime_rec": mtime_rec})
+        log.info("[MODELS] Checkpoints chargés en cache")
+
+    return _model_cache["enc"], _model_cache["scorer"]
+
+
 @app.post("/predict")
 def predict(payload: PredictRequest, x_secret: str = Header(default="")):
     """
     Inférence ML : prend les features sur 14 jours, retourne les top_k séances.
     Appelé par cronos-backend — les checkpoints restent sur ce service.
+    Modèles mis en cache, rechargés automatiquement après chaque réentraînement.
     """
     if ML_SECRET and x_secret != ML_SECRET:
         raise HTTPException(status_code=401, detail="Secret invalide")
 
     try:
-        import sys, os, json
-        import numpy as np
         import torch
-        from pathlib import Path
-
-        from models.encoder import Encoder
-        from recommendation.recommender import SessionScorer
         from recommendation.encoders import encode_athlete_profile, encode_race_context
         from recommendation.session_types_v2 import SESSION_CATALOGUE
 
-        ckpt_dir = Path("checkpoints")
-        enc_path  = ckpt_dir / "best_model.pt"
-        rec_path  = ckpt_dir / "best_recommender.pt"
-
-        if not enc_path.exists() or not rec_path.exists():
+        enc, scorer = _get_models()
+        if enc is None:
             return {"error": "checkpoints_not_found", "recommendations": None}
-
-        enc = Encoder(n_features=22)
-        enc.load_state_dict(torch.load(enc_path, map_location="cpu", weights_only=True), strict=False)
-        enc.eval()
-
-        scorer = SessionScorer()
-        scorer.load_state_dict(torch.load(rec_path, map_location="cpu", weights_only=True), strict=False)
-        scorer.eval()
 
         x = torch.tensor([payload.feature_rows], dtype=torch.float32)  # (1, 14, 22)
         with torch.no_grad():
