@@ -48,21 +48,36 @@ import pandas as pd
 # ─────────────────────────────────────────────
 
 WINDOW = 14       # jours par fenêtre
-N_FEATURES = 12   # features par jour
+N_FEATURES = 21   # features par jour
 
 FEATURE_NAMES = [
-    "hrv_rmssd",
-    "hr_rest",
-    "sleep_duration",
-    "sleep_quality",
-    "hr_mean",
-    "hr_drift",
-    "pace_mean",
-    "pace_hr_ratio",
-    "duration",
-    "elevation_gain",
-    "training_load",
-    "is_rest_day",
+    # ── Récupération (Garmin) ──────────────────────────────────────────
+    "hrv_rmssd",           # 0  HRV nuit (ms)
+    "hr_rest",             # 1  FC repos (bpm)
+    "sleep_duration",      # 2  Durée sommeil (h)
+    "sleep_quality",       # 3  Score sommeil (0-100)
+    "body_battery",        # 4  Body Battery chargé (0-100) ← nouveau
+    "stress_score",        # 5  Stress Garmin (0-100) ← nouveau
+    "spo2",                # 6  SpO2 (%) ← nouveau
+    "respiration_rate",    # 7  Fréquence respiratoire (rpm) ← nouveau
+    # ── Séance ────────────────────────────────────────────────────────
+    "hr_mean",             # 8  FC moyenne séance
+    "hr_drift",            # 9  Dérive FC estimée
+    "pace_mean",           # 10 Allure (m/s)
+    "pace_hr_ratio",       # 11 Économie de course
+    "duration",            # 12 Durée séance (min)
+    "elevation_gain",      # 13 Dénivelé+ (m)
+    "training_load",       # 14 Charge = duration × hr_mean / 100
+    "is_rest_day",         # 15 Masque repos (0/1)
+    # ── Activité générale ─────────────────────────────────────────────
+    "active_minutes",      # 16 Minutes actives hors course ← nouveau
+    # ── Environnement ─────────────────────────────────────────────────
+    "temperature_c",       # 17 Température max °C (Open-Meteo) ← nouveau
+    "precipitation_mm",    # 18 Précipitations mm (Open-Meteo) ← nouveau
+    # ── Bien-être subjectif ───────────────────────────────────────────
+    "wellness_score",      # 19 0=fatigué / 0.5=normal / 1=en forme ← nouveau
+    # ── Séquence ──────────────────────────────────────────────────────
+    "consecutive_active",  # 20 Jours actifs consécutifs ← nouveau
 ]
 
 
@@ -154,23 +169,44 @@ def build_daily_features(
     acts_agg: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Joint les métriques de repos et les agrégats d'activités.
-    Remplit les jours de repos avec 0 sur les features séance.
-    Ajoute le masque is_rest_day.
+    Joint les métriques Garmin, les agrégats d'activités et les features calculées.
+    Nouvelles features : body_battery, stress, SpO2, respiration, météo, wellness,
+                         minutes actives, jours actifs consécutifs.
     """
-    # Colonnes utiles du daily
-    rest_cols = {
-        "date":           "date",
-        "hrv_last_night": "hrv_rmssd",
-        "resting_hr":     "hr_rest",
-        "sleep_duration_min": "sleep_duration_raw",
-        "sleep_score":    "sleep_quality",
+    # Colonnes de base depuis daily_metrics
+    col_map = {
+        "date":                 "date",
+        "hrv_last_night":       "hrv_rmssd",
+        "resting_hr":           "hr_rest",
+        "sleep_duration_min":   "sleep_duration_raw",
+        "sleep_score":          "sleep_quality",
+        "body_battery_charged": "body_battery",
+        "avg_stress":           "stress_score",
+        "avg_spo2":             "spo2",
+        "avg_respiration_rate": "respiration_rate",
+        "active_min":           "active_minutes",
+        "temperature_c":        "temperature_c",
+        "precipitation_mm":     "precipitation_mm",
+        "wellness_score":       "wellness_score",
     }
-    df = daily[list(rest_cols.keys())].rename(columns=rest_cols).copy()
+    avail = {k: v for k, v in col_map.items() if k in daily.columns}
+    df = daily[list(avail.keys())].rename(columns=avail).copy()
 
     # Convertit durée de sommeil en heures
-    df["sleep_duration"] = df["sleep_duration_raw"] / 60
-    df = df.drop(columns=["sleep_duration_raw"])
+    if "sleep_duration_raw" in df.columns:
+        df["sleep_duration"] = df["sleep_duration_raw"] / 60
+        df = df.drop(columns=["sleep_duration_raw"])
+    else:
+        df["sleep_duration"] = 0.0
+
+    # Assure que toutes les colonnes attendues existent
+    for col in ["body_battery", "stress_score", "spo2", "respiration_rate",
+                "active_minutes", "temperature_c", "precipitation_mm", "wellness_score"]:
+        if col not in df.columns:
+            df[col] = 0.0
+
+    # Wellness par défaut = 0.5 (normal) si non rempli
+    df["wellness_score"] = df["wellness_score"].fillna(0.5)
 
     # Merge avec activités
     df = df.merge(acts_agg, on="date", how="left")
@@ -183,9 +219,27 @@ def build_daily_features(
                    "duration", "elevation_gain", "training_load"]
     df[seance_cols] = df[seance_cols].fillna(0)
 
-    # Réordonne dans l'ordre FEATURE_NAMES
-    df = df[["date"] + FEATURE_NAMES]
+    # Jours actifs consécutifs (rolling count)
+    df = df.sort_values("date").reset_index(drop=True)
+    consecutive = []
+    count = 0
+    for rest in df["is_rest_day"]:
+        if rest == 0:
+            count += 1
+        else:
+            count = 0
+        consecutive.append(float(count))
+    df["consecutive_active"] = consecutive
 
+    # Remplace NaN restants par 0
+    df = df.fillna(0)
+
+    # Réordonne dans l'ordre FEATURE_NAMES (ajoute les manquants à 0)
+    for col in FEATURE_NAMES:
+        if col not in df.columns:
+            df[col] = 0.0
+
+    df = df[["date"] + FEATURE_NAMES]
     return df.sort_values("date").reset_index(drop=True)
 
 
