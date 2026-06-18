@@ -125,10 +125,12 @@ def aggregate_activities(acts: pd.DataFrame) -> pd.DataFrame:
     # Convertit km/h → m/s
     agg["pace_mean"] = agg["pace_mean"] / 3.6
 
-    # Dérive FC estimée : proxy = (hr_max - hr_mean) / hr_mean
-    # Idéalement calculé intra-séance mais on approche ici
-    agg["hr_drift"] = (agg["hr_max"] - agg["hr_mean"]) / agg["hr_mean"].replace(0, np.nan)
-    agg["hr_drift"] = agg["hr_drift"].fillna(0)
+    # Dérive FC : (hr_max - hr_mean) / hr_mean, clampée à [0, 1]
+    # Proxy jour-niveau acceptable en l'absence de séries intra-séance Garmin.
+    # Valeurs typiques : récupération ~0.05-0.10, intensité ~0.15-0.30, VO2max ~0.30+
+    agg["hr_drift"] = (
+        (agg["hr_max"] - agg["hr_mean"]) / agg["hr_mean"].replace(0, np.nan)
+    ).clip(0, 1).fillna(0)
 
     # Charge d'entraînement estimée = duration (min) * hr_mean / 100
     agg["training_load"] = agg["duration"] * agg["hr_mean"] / 100
