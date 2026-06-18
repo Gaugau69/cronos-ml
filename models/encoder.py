@@ -34,14 +34,20 @@ from typing import Optional
 # Indices des features (ordre fixe dans FEATURE_NAMES)
 # ─────────────────────────────────────────────────────────────
 
-# Features de repos : hrv_rmssd, hr_rest, sleep_duration, sleep_quality, is_rest_day
-REST_INDICES   = [0, 1, 2, 3, 11]
+# Features physiologiques / récupération / environnement (état lent)
+# hrv_rmssd(0), hr_rest(1), sleep_duration(2), sleep_quality(3),
+# body_battery(4), stress_score(5), spo2(6), respiration_rate(7),
+# is_rest_day(15), temperature_c(17), precipitation_mm(18), wellness_score(19)
+REST_INDICES   = [0, 1, 2, 3, 4, 5, 6, 7, 15, 17, 18, 19]
 
-# Features de séance : hr_mean, hr_drift, pace_mean, pace_hr_ratio, duration, elevation_gain, training_load
-SEANCE_INDICES = [4, 5, 6, 7, 8, 9, 10]
+# Features de séance / performance (état rapide)
+# hr_mean(8), hr_drift(9), pace_mean(10), pace_hr_ratio(11),
+# duration(12), elevation_gain(13), training_load(14),
+# active_minutes(16), consecutive_active(20), economy_trend(21)
+SEANCE_INDICES = [8, 9, 10, 11, 12, 13, 14, 16, 20, 21]
 
-N_REST   = len(REST_INDICES)    # 5
-N_SEANCE = len(SEANCE_INDICES)  # 7
+N_REST   = len(REST_INDICES)    # 12
+N_SEANCE = len(SEANCE_INDICES)  # 10
 
 
 # ─────────────────────────────────────────────────────────────
@@ -260,7 +266,7 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        n_features: int = 21,
+        n_features: int = 22,
         d_model: int = 64,
         n_heads: int = 4,
         n_layers: int = 3,

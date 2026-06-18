@@ -48,7 +48,7 @@ import pandas as pd
 # ─────────────────────────────────────────────
 
 WINDOW = 14       # jours par fenêtre
-N_FEATURES = 21   # features par jour
+N_FEATURES = 22   # features par jour
 
 FEATURE_NAMES = [
     # ── Récupération (Garmin) ──────────────────────────────────────────
@@ -78,6 +78,7 @@ FEATURE_NAMES = [
     "wellness_score",      # 19 0=fatigué / 0.5=normal / 1=en forme ← nouveau
     # ── Séquence ──────────────────────────────────────────────────────
     "consecutive_active",  # 20 Jours actifs consécutifs ← nouveau
+    "economy_trend",       # 21 Pente pace_hr_ratio sur la fenêtre (+ = s'améliore) ← nouveau
 ]
 
 
@@ -237,7 +238,7 @@ def build_daily_features(
     # Réordonne dans l'ordre FEATURE_NAMES (ajoute les manquants à 0)
     for col in FEATURE_NAMES:
         if col not in df.columns:
-            df[col] = 0.0
+            df[col] = 0.0  # economy_trend initialisé à 0, calculé dans build_windows
 
     df = df[["date"] + FEATURE_NAMES]
     return df.sort_values("date").reset_index(drop=True)
@@ -323,6 +324,18 @@ def build_windows(
 
         # Remplace NaN résiduels par 0
         w = np.nan_to_num(w, nan=0.0)
+
+        # Calcul de l'economy_trend : pente linéaire de pace_hr_ratio sur la fenêtre
+        # Valeur positive = économie de course qui s'améliore, négative = se dégrade
+        pr_idx = FEATURE_NAMES.index("economy_trend")
+        phr_idx = FEATURE_NAMES.index("pace_hr_ratio")
+        phr_vals = w[:, phr_idx]
+        nonzero = np.where(phr_vals > 0)[0]
+        if len(nonzero) >= 3:
+            slope = float(np.polyfit(nonzero, phr_vals[nonzero], 1)[0])
+        else:
+            slope = 0.0
+        w[:, pr_idx] = slope  # broadcast la pente sur tous les jours de la fenêtre
 
         windows.append(w)
         metas.append({
