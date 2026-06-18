@@ -260,7 +260,7 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        n_features: int = 12,
+        n_features: int = 21,
         d_model: int = 64,
         n_heads: int = 4,
         n_layers: int = 3,
