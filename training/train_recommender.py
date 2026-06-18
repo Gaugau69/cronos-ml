@@ -130,6 +130,69 @@ def build_labels_from_recovery(data_dir: str, meta: pd.DataFrame) -> torch.Tenso
     return labels
 
 
+def build_labels_from_feedback(data_dir: str, meta: pd.DataFrame, labels: torch.Tensor) -> torch.Tensor:
+    """
+    Ajuste les labels depuis les feedbacks utilisateurs réels.
+
+    Mapping feedback → signal d'entraînement :
+      'ok'        → label = 1.0 pour cette séance (signal fort positif)
+      'facile'    → label = 0.1 + boost +0.4 pour les séances d'intensité supérieure
+      'difficile' → label = 0.1 + boost +0.4 pour les séances d'intensité inférieure
+
+    Ces labels override les labels de récupération quand ils existent.
+    """
+    feedback_path = Path(data_dir).parent / "raw" / "feedback.json"
+    if not feedback_path.exists():
+        print(f"  ⚠ {feedback_path} introuvable — labels feedback ignorés")
+        return labels
+
+    with open(feedback_path) as f:
+        feedbacks = json.load(f)
+
+    if not feedbacks:
+        print("  ⚠ Aucun feedback disponible")
+        return labels
+
+    # Index session_name → position dans SESSION_CATALOGUE
+    name_to_idx = {s.name: i for i, s in enumerate(SESSION_CATALOGUE)}
+
+    n_applied = 0
+    for fb in feedbacks:
+        user        = fb.get("user_name")
+        done_at     = pd.Timestamp(fb["done_at"])
+        session_name = fb.get("session_name", "")
+        feedback     = fb.get("feedback")
+
+        s_idx = name_to_idx.get(session_name)
+        if s_idx is None or feedback not in ("facile", "ok", "difficile"):
+            continue
+
+        # Trouver la fenêtre dont window_end == done_at pour ce user
+        user_col = "user" if "user" in meta.columns else meta.columns[0]
+        mask = (meta.get(user_col, pd.Series()) == user) & \
+               (pd.to_datetime(meta["window_end"]) == done_at)
+        row_indices = meta[mask].index.tolist()
+
+        for row_idx in row_indices:
+            if feedback == "ok":
+                labels[row_idx, s_idx] = 1.0
+            else:
+                # Pénalise la séance recommandée
+                labels[row_idx, s_idx] = 0.1
+                # Boost les séances d'intensité adjacente dans la bonne direction
+                current_intensity = SESSION_CATALOGUE[s_idx].intensity
+                delta = +0.2 if feedback == "facile" else -0.2
+                target = max(0.0, min(1.0, current_intensity + delta))
+                for j, s in enumerate(SESSION_CATALOGUE):
+                    if abs(s.intensity - target) < 0.15:
+                        labels[row_idx, j] = float(min(1.0, float(labels[row_idx, j]) + 0.4))
+            n_applied += 1
+
+    pct = round(n_applied / len(feedbacks) * 100) if feedbacks else 0
+    print(f"  → {n_applied}/{len(feedbacks)} feedbacks appliqués ({pct}%) sur {len(meta)} fenêtres")
+    return labels
+
+
 # ─────────────────────────────────────────────────────────────
 # Dataset
 # ─────────────────────────────────────────────────────────────
@@ -150,6 +213,9 @@ class RecommendationDataset(Dataset):
 
         print("[CRONOS] Construction des labels de récupération...")
         self.labels = build_labels_from_recovery(data_dir, meta)
+
+        print("[CRONOS] Intégration des feedbacks utilisateurs...")
+        self.labels = build_labels_from_feedback(data_dir, meta, self.labels)
 
         self.profile = encode_athlete_profile(profiles[0] if profiles else {})
         self.race    = encode_race_context(races[0] if races else None)

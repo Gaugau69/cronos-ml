@@ -186,6 +186,56 @@ def export_activities(conn, output_dir: Path) -> int:
     return len(rows)
 
 
+def export_feedback(conn, output_dir: Path) -> int:
+    """Exporte les feedbacks utilisateurs ('facile'|'ok'|'difficile') — signal d'entraînement."""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                sf.session_id,
+                sf.session_name,
+                sf.feedback,
+                sf.done_at::text AS done_at,
+                u.garmin_username  AS user_name
+            FROM cronos_session_feedback sf
+            JOIN users u ON u.id = sf.user_id
+            ORDER BY sf.done_at DESC
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+
+    path = output_dir / "feedback.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2, default=str)
+
+    print(f"  → {len(rows)} feedbacks exportés → {path}")
+    return len(rows)
+
+
+def export_session_history(conn, output_dir: Path) -> int:
+    """Exporte l'historique des séances effectuées."""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                sh.session_id,
+                sh.session_name,
+                sh.category,
+                sh.duration_min,
+                sh.distance_km,
+                sh.done_at::text AS done_at,
+                u.garmin_username  AS user_name
+            FROM cronos_session_history sh
+            JOIN users u ON u.id = sh.user_id
+            ORDER BY sh.done_at DESC
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+
+    path = output_dir / "session_history.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2, default=str)
+
+    print(f"  → {len(rows)} séances historiques exportées → {path}")
+    return len(rows)
+
+
 def main(output_dir: str = "data", database_url: str = None):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -206,6 +256,8 @@ def main(output_dir: str = "data", database_url: str = None):
         n_races    = export_races(conn, output_dir)
         n_daily    = export_daily_metrics(conn, output_dir)
         n_acts     = export_activities(conn, output_dir)
+        n_fb       = export_feedback(conn, output_dir)
+        n_hist     = export_session_history(conn, output_dir)
 
         conn.close()
 
@@ -217,10 +269,17 @@ def main(output_dir: str = "data", database_url: str = None):
         print(f"  Métriques  : {n_daily} jours")
         print(f"  Activités  : {n_acts} séances")
 
+        print(f"  Feedback    : {n_fb} retours utilisateurs")
+        print(f"  Historique  : {n_hist} séances effectuées")
+
         if n_rpe == 0:
             print("\n⚠ Aucun RPE — le recommender utilisera des labels par défaut.")
         if n_profiles == 0:
             print("\n⚠ Aucun profil athlète — encourage les athlètes à remplir leur profil.")
+        if n_fb < 50:
+            print(f"\n⚠ Seulement {n_fb} feedbacks — en dessous de 50, le signal est faible pour entraîner le ML.")
+        else:
+            print(f"\n✓ {n_fb} feedbacks disponibles — suffisant pour intégrer dans l'entraînement.")
 
     except Exception as e:
         print(f"❌ Erreur connexion DB : {e}")
