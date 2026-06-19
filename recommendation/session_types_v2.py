@@ -216,9 +216,91 @@ SESSION_CATALOGUE = [
     SessionType(44, "Course en nature", "endurance", 0.4, 60, 10, 100, 0.3, 0,
         "Sortie trail décontractée — profiter de la nature sans objectif de performance.",
         "60min en forêt à allure plaisir", "60min nature avec quelques accélérations", "60min nature avec variations terrain"),
+
+    # ── GRADATIONS INTERVALLES ──────────────────────────────────────────────
+    SessionType(45, "Intervalles 1min", "intensite", 0.82, 45, 9, 0, 0.6, 1,
+        "1min vite / 1min trot — VO2max accessible, excellent rapport effort/récup.",
+        "15×(1min rapide + 1min trot)", "15×(1min 5km + 1min trot)", "15×(1min 3km + 1min trot)"),
+    SessionType(46, "Intervalles 2min", "intensite", 0.85, 50, 10, 0, 0.65, 1,
+        "2min à allure vive / 2min trot — développe l'endurance anaérobie.",
+        "8×(2min effort + 2min trot)", "8×(2min allure 5km + 2min trot)", "8×(2min allure 3km + 2min trot)"),
+    SessionType(47, "Intervalles 3min", "intensite", 0.88, 55, 11, 0, 0.7, 1,
+        "3min au seuil anaérobie / 3min trot — séance clé VO2max.",
+        "6×(3min effort + 3min trot)", "6×(3min VO2max + 3min trot)", "6×(3min max aérobie + 3min trot)"),
+    SessionType(48, "Intervalles 5min", "intensite", 0.78, 60, 12, 0, 0.7, 2,
+        "5min à allure soutenue / 3min trot — endurance à haute intensité.",
+        "5×(5min effort + 3min trot)", "5×(5min allure 10km + 3min trot)", "5×(5min seuil + 3min trot)"),
+    SessionType(49, "Répétitions 800m", "intensite", 0.87, 55, 10, 0, 0.65, 1,
+        "800m à allure 3-5km avec récup marchée — précision de l'allure.",
+        "6×800m (récup 400m marche)", "7×800m (récup 2min trot)", "8×800m (récup 90s trot)"),
+    SessionType(50, "Répétitions 1500m", "intensite", 0.82, 60, 12, 0, 0.65, 2,
+        "1500m à allure 5-10km — renforce l'endurance à allure rapide.",
+        "4×1500m (récup 3min trot)", "5×1500m (récup 2min30 trot)", "5×1500m (récup 2min trot)"),
+
+    # ── RÉCUPÉRATION ACTIVE VARIÉE ──────────────────────────────────────────
+    SessionType(51, "Aqua-jogging", "recuperation", 0.3, 45, 0, 0, 0.0, 0,
+        "Course dans l'eau — impact zéro, parfait après blessure ou grosse semaine.",
+        "45min avec ceinture de flottaison", "45min avec ceinture + intervalles", "50min avec résistance"),
+    SessionType(52, "Vélo tempo", "intensite", 0.6, 60, 0, 0, 0.45, 1,
+        "Vélo à allure tempo — maintient la condition sans l'impact running.",
+        "60min dont 20min tempo", "60min dont 30min tempo", "60min dont 40min tempo"),
+    SessionType(53, "Elliptique intervalle", "intensite", 0.65, 45, 0, 0, 0.4, 1,
+        "Intervalles sur elliptique — cardio sans impact, idéal en récup active.",
+        "6×(3min effort + 2min facile)", "8×(3min effort + 2min facile)", "10×(3min effort + 2min facile)"),
+    SessionType(54, "Marche nordique", "endurance", 0.3, 60, 8, 200, 0.1, 0,
+        "Marche avec bâtons — travail global du corps, récupération active.",
+        "60min terrain plat", "60min terrain varié", "75min avec dénivelé"),
+
+    # ── SPÉCIFIQUE ENVIRONNEMENT ────────────────────────────────────────────
+    SessionType(55, "Sortie chaleur", "endurance", 0.35, 40, 6, 0, 0.4, 0,
+        "Entraînement par forte chaleur — allure réduite, hydratation renforcée, adaptation thermique.",
+        "40min tôt matin, eau toutes 15min", "40min avec gilet refroidissant", "45min adaptation thermique"),
+    SessionType(56, "Sortie froid", "endurance", 0.4, 45, 7, 0, 0.25, 0,
+        "Course hivernale — technique adaptée au froid, échauffement prolongé.",
+        "45min avec 15min échauff progressif", "45min avec couches adaptées", "50min avec travail foulée froid"),
+    SessionType(57, "Entraînement altitude", "endurance", 0.45, 60, 8, 500, 0.5, 1,
+        "Sortie en altitude — effort perçu élevé, FC haute, allure réduite.",
+        "60min Z2, s'arrêter si FC > 85%", "60min avec montées progressives", "75min avec dénivelé cumulé"),
+
+    # ── TRAVAIL TECHNIQUE ───────────────────────────────────────────────────
+    SessionType(58, "Côtes sprint", "force", 0.9, 40, 5, 150, 0.6, 0,
+        "Sprints en côte très courts (8-12s) — puissance explosive, économie de foulée.",
+        "10×(10s sprint + descente marche)", "12×(10s sprint + descente trot)", "15×(10s sprint + descente trot)"),
+    SessionType(59, "Descente technique", "specifique", 0.5, 60, 10, 400, 0.45, 1,
+        "Travail spécifique descente — fréquence de foulée, freinage actif, technique trail.",
+        "60min avec focus descentes douces", "60min descentes variées", "75min descentes techniques"),
+    SessionType(60, "Dénivelé cumulé", "force", 0.65, 75, 10, 600, 0.6, 1,
+        "Accumulation de dénivelé positif — répétitions de montées, résistance musculaire.",
+        "15×200m D+ avec descente trot", "20×200m D+ avec descente trot", "20×300m D+ avec descente trot)"),
+    SessionType(61, "Proprioception", "recuperation", 0.2, 30, 0, 0, 0.1, 0,
+        "Équilibre, stabilité, pieds nus — prévient les blessures et améliore la foulée.",
+        "30min équilibre unipodal + foulée pieds nus", "30min réceptions + stabilité", "35min proprioception avancée"),
+    SessionType(62, "Gainage core avancé", "force", 0.4, 40, 0, 0, 0.2, 0,
+        "Gainage profond, transverse, lombaires — stabilité du bassin pour coureurs.",
+        "40min planche + dead bug + bird dog", "40min anti-rotation + gainage dynamique", "45min circuit core complet"),
+
+    # ── BLOCS PÉRIODISATION ─────────────────────────────────────────────────
+    SessionType(63, "Semaine de charge", "endurance", 0.55, 90, 18, 200, 0.7, 1,
+        "Volume élevé (+20% normal) — phase d'accumulation, fatigue progressive.",
+        "90min Z2 volume élevé", "90min Z2 + côtes", "90min Z2 + tempo en fin"),
+    SessionType(64, "Semaine de récupération", "recuperation", 0.25, 35, 5, 0, 0.05, 0,
+        "Volume réduit (-40%) — relâchement, récupération profonde entre blocs de charge.",
+        "35min très facile", "35min très facile + mobilité", "40min très facile + étirements"),
+    SessionType(65, "Micro-affûtage", "specifique", 0.45, 25, 4, 0, 0.1, 0,
+        "J-3 à J-1 avant course — activer sans fatiguer, réveiller les jambes.",
+        "25min facile + 4×20s accélérations", "25min facile + 6×20s accélérations", "30min facile + 6×30s accélérations"),
+    SessionType(66, "Grand affûtage", "specifique", 0.35, 30, 5, 0, 0.05, 1,
+        "J-14 à J-7 : réduction progressive du volume, maintien intensité.",
+        "30min facile + 2×5min allure cible", "35min dont 10min allure cible", "35min dont 2×8min allure cible"),
+    SessionType(67, "Sortie matinale légère", "recuperation", 0.3, 30, 5, 0, 0.15, 0,
+        "Sortie matinale — active le métabolisme, améliore la récupération nocturne.",
+        "30min très facile au réveil", "30min facile avec quelques accélérations", "35min facile + ABC de course"),
+    SessionType(68, "Double séance", "endurance", 0.45, 40, 7, 0, 0.5, 2,
+        "Deux sorties dans la même journée — matin léger + soir modéré. Réservé aux expérimentés.",
+        "Matin 20min + Soir 35min endurance", "Matin 25min + Soir 40min endurance", "Matin 30min + Soir 45min endurance"),
 ]
 
-N_SESSIONS = len(SESSION_CATALOGUE)  # 45
+N_SESSIONS = len(SESSION_CATALOGUE)  # 69
 
 
 def get_session_embeddings() -> torch.Tensor:
