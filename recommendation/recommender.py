@@ -164,7 +164,7 @@ class CRONOSRecommender(nn.Module):
                 "score":        round(scores[idx].item() * 100, 1),
                 "category":     session.category,
                 "description":  session.description,
-                "example":      session.example,
+                "example":      session.example_debutant,
                 "intensity":    session.intensity,
                 "duration_min": session.duration_min,
                 "distance_km":  session.distance_km,
