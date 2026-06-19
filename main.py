@@ -128,12 +128,25 @@ def _get_models():
             mtime_rec != _model_cache["mtime_rec"] or
             _model_cache["enc"] is None):
         log.info("[MODELS] Chargement des checkpoints (nouveaux ou premier load)")
-        enc = Encoder(n_features=22)
-        enc.load_state_dict(torch.load(enc_path, map_location="cpu", weights_only=True), strict=False)
+
+        from models.jepa import JEPA
+        from recommendation.recommender import CRONOSRecommender
+
+        # best_model.pt → dict {"model_state": JEPA.state_dict(), ...}
+        jepa = JEPA()
+        ckpt_jepa = torch.load(enc_path, map_location="cpu", weights_only=False)
+        jepa.load_state_dict(ckpt_jepa["model_state"], strict=True)
+        jepa.eval()
+        # On utilise l'encodeur de contexte pour l'inférence
+        enc = jepa.context_encoder
         enc.eval()
-        scorer = SessionScorer()
-        scorer.load_state_dict(torch.load(rec_path, map_location="cpu", weights_only=True), strict=False)
+
+        # best_recommender.pt → dict {"model_state": CRONOSRecommender.state_dict(), ...}
+        scorer = CRONOSRecommender()
+        ckpt_rec = torch.load(rec_path, map_location="cpu", weights_only=False)
+        scorer.load_state_dict(ckpt_rec["model_state"], strict=True)
         scorer.eval()
+
         _model_cache.update({"enc": enc, "scorer": scorer, "mtime_enc": mtime_enc, "mtime_rec": mtime_rec})
         log.info("[MODELS] Checkpoints chargés en cache")
 
@@ -161,28 +174,34 @@ def predict(payload: PredictRequest, x_secret: str = Header(default="")):
 
         x = torch.tensor([payload.feature_rows], dtype=torch.float32)  # (1, 14, 22)
         with torch.no_grad():
-            z_jepa = enc(x)
+            z_jepa = enc(x)  # (1, 64)
+            if z_jepa.dim() == 1:
+                z_jepa = z_jepa.unsqueeze(0)
 
         x_profile = encode_athlete_profile(payload.profile or {})
         x_race    = encode_race_context(payload.races[0] if payload.races else None)
 
-        with torch.no_grad():
-            scores = scorer(
-                z_jepa.unsqueeze(0) if z_jepa.dim() == 1 else z_jepa,
-                x_profile.unsqueeze(0),
-                x_race.unsqueeze(0),
-            ).squeeze(0).tolist()
+        # Assure batch dim = 1
+        if x_profile.dim() == 1:
+            x_profile = x_profile.unsqueeze(0)
+        if x_race.dim() == 1:
+            x_race = x_race.unsqueeze(0)
 
-        indexed = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
+        with torch.no_grad():
+            recs = scorer.recommend(z_jepa, x_profile, x_race, top_k=payload.top_k)
+
         results = []
-        for s_idx, score in indexed[:payload.top_k]:
-            s = SESSION_CATALOGUE[s_idx]
+        for rec in recs:
             results.append({
-                "id": s.id, "name": s.name, "category": s.category,
-                "score": round(score * 100, 1),
-                "intensity": s.intensity, "duration_min": s.duration_min,
-                "distance_km": s.distance_km, "recovery_cost": s.recovery_cost,
-                "description": s.description,
+                "id":           rec["session_id"],
+                "name":         rec["name"],
+                "category":     rec["category"],
+                "score":        rec["score"],
+                "intensity":    rec["intensity"],
+                "duration_min": rec["duration_min"],
+                "distance_km":  rec["distance_km"],
+                "recovery_cost": 0.0,
+                "description":  rec["description"],
             })
 
         return {"recommendations": results, "computed_with_ml": True}
