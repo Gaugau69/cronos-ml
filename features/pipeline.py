@@ -240,6 +240,9 @@ def build_daily_features(
         if col not in df.columns:
             df[col] = 0.0  # economy_trend initialisé à 0, calculé dans build_windows
 
+    # Convertit toutes les features en float64 avant normalisation (évite LossySetitemError)
+    df[FEATURE_NAMES] = df[FEATURE_NAMES].astype(float)
+
     df = df[["date"] + FEATURE_NAMES]
     return df.sort_values("date").reset_index(drop=True)
 
