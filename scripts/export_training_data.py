@@ -195,7 +195,7 @@ def export_feedback(conn, output_dir: Path) -> int:
                 sf.session_name,
                 sf.feedback,
                 sf.done_at::text AS done_at,
-                u.name  AS user_name
+                u.email  AS user_name
             FROM cronos_session_feedback sf
             JOIN users u ON u.id = sf.user_id
             ORDER BY sf.done_at DESC
@@ -221,7 +221,7 @@ def export_session_history(conn, output_dir: Path) -> int:
                 sh.duration_min,
                 sh.distance_km,
                 sh.done_at::text AS done_at,
-                u.name  AS user_name
+                u.email  AS user_name
             FROM cronos_session_history sh
             JOIN users u ON u.id = sh.user_id
             ORDER BY sh.done_at DESC
