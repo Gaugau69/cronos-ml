@@ -44,7 +44,7 @@ def export_rpe(conn, output_dir: Path) -> int:
                 a.elevation_gain_m,
                 a.training_effect,
                 a.rpe,
-                u.garmin_username AS user_name
+                u.name AS user_name
             FROM cronos_activities a
             JOIN users u ON u.id = a.user_id
             WHERE a.rpe IS NOT NULL
@@ -78,7 +78,7 @@ def export_profiles(conn, output_dir: Path) -> int:
         cur.execute("""
             SELECT
                 ap.*,
-                u.garmin_username AS user_name,
+                u.name AS user_name,
                 u.email AS user_email
             FROM cronos_athlete_profiles ap
             JOIN users u ON u.id = ap.user_id
@@ -113,7 +113,7 @@ def export_races(conn, output_dir: Path) -> int:
         cur.execute("""
             SELECT
                 pr.*,
-                u.garmin_username AS user_name,
+                u.name AS user_name,
                 (pr.race_date - CURRENT_DATE) AS days_to_race
             FROM cronos_planned_races pr
             JOIN users u ON u.id = pr.user_id
@@ -136,7 +136,7 @@ def export_daily_metrics(conn, output_dir: Path) -> int:
         cur.execute("""
             SELECT
                 dm.*,
-                u.garmin_username AS user_name
+                u.name AS user_name
             FROM cronos_daily_metrics dm
             JOIN users u ON u.id = dm.user_id
             ORDER BY dm.date DESC
@@ -164,7 +164,7 @@ def export_activities(conn, output_dir: Path) -> int:
         cur.execute("""
             SELECT
                 a.*,
-                u.garmin_username AS user_name
+                u.name AS user_name
             FROM cronos_activities a
             JOIN users u ON u.id = a.user_id
             ORDER BY a.date DESC
@@ -195,7 +195,7 @@ def export_feedback(conn, output_dir: Path) -> int:
                 sf.session_name,
                 sf.feedback,
                 sf.done_at::text AS done_at,
-                u.garmin_username  AS user_name
+                u.name  AS user_name
             FROM cronos_session_feedback sf
             JOIN users u ON u.id = sf.user_id
             ORDER BY sf.done_at DESC
@@ -221,7 +221,7 @@ def export_session_history(conn, output_dir: Path) -> int:
                 sh.duration_min,
                 sh.distance_km,
                 sh.done_at::text AS done_at,
-                u.garmin_username  AS user_name
+                u.name  AS user_name
             FROM cronos_session_history sh
             JOIN users u ON u.id = sh.user_id
             ORDER BY sh.done_at DESC
