@@ -48,10 +48,10 @@ jobs:
         run: |
           python -m training.train \
             --data data/processed \
-            --epochs 100 \
+            --epochs 300 \
             --batch_size 64 \
             --num_workers 2 \
-            --log_every 25 \
+            --log_every 50 \
             --device cpu
 
       - name: Retrain Recommender
