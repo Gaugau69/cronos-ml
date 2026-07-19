@@ -1,0 +1,77 @@
+name: Weekly ML Retrain
+
+on:
+  schedule:
+    - cron: '0 4 * * 0'  # Chaque dimanche à 4h UTC (après le cron de collecte)
+  workflow_dispatch:      # Déclenchement manuel depuis GitHub
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create data directories
+        run: mkdir -p data/raw data/processed checkpoints
+
+      - name: Export training data from DB
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python -m scripts.export_training_data \
+            --output data/raw \
+            --db_url "$DATABASE_URL"
+
+      - name: Build feature pipeline
+        run: |
+          python -m features.pipeline \
+            --daily data/raw/daily_metrics.csv \
+            --activities data/raw/activities.csv \
+            --window 14 \
+            --save data/processed
+
+      - name: Retrain JEPA encoder
+        run: |
+          python -m training.train \
+            --data data/processed \
+            --epochs 100 \
+            --batch_size 64 \
+            --num_workers 2 \
+            --log_every 25 \
+            --device cpu
+
+      - name: Retrain Recommender
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python -m training.train_recommender \
+            --epochs 50 \
+            --batch_size 64 \
+            --num_workers 2 \
+            --log_every 10 \
+            --profiles data/raw/profiles.json \
+            --races data/raw/races.json \
+            --device cpu
+
+      - name: Commit updated checkpoints
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add checkpoints/best_model.pt checkpoints/best_recommender.pt
+          git diff --staged --quiet && echo "Aucun changement" || \
+            git commit -m "chore: réentraînement automatique $(date -u +%Y-%m-%d)" && \
+            git push
