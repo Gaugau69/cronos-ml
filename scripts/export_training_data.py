@@ -140,7 +140,6 @@ def export_daily_metrics(conn, output_dir: Path) -> int:
             FROM cronos_daily_metrics dm
             JOIN users u ON u.id = dm.user_id
             ORDER BY dm.date DESC
-            LIMIT 10000
         """)
         rows = [dict(r) for r in cur.fetchall()]
 
