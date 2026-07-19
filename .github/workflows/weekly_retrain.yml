@@ -59,7 +59,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           python -m training.train_recommender \
-            --epochs 50 \
+            --epochs 100 \
             --batch_size 64 \
             --num_workers 2 \
             --log_every 10 \
