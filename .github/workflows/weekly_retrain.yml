@@ -73,8 +73,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add checkpoints/best_model.pt checkpoints/best_recommender.pt
-          git diff --staged --quiet && echo "Aucun changement" || \
-            git commit -m "chore: réentraînement automatique $(date -u +%Y-%m-%d)" && \
-            git pull --rebase origin main && \
-            git push --force-with-lease
+          if git diff --staged --quiet; then
+            echo "Aucun changement dans les checkpoints"
+          else
+            git commit -m "chore: réentraînement automatique $(date -u +%Y-%m-%d)"
+            git push origin main
+          fi
