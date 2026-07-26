@@ -76,4 +76,5 @@ jobs:
           git add checkpoints/best_model.pt checkpoints/best_recommender.pt
           git diff --staged --quiet && echo "Aucun changement" || \
             git commit -m "chore: réentraînement automatique $(date -u +%Y-%m-%d)" && \
-            git push
+            git pull --rebase origin main && \
+            git push --force-with-lease
