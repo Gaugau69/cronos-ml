@@ -3,7 +3,16 @@ name: Weekly ML Retrain
 on:
   schedule:
     - cron: '0 4 * * 0'  # Chaque dimanche à 4h UTC (après le cron de collecte)
-  workflow_dispatch:      # Déclenchement manuel depuis GitHub
+  workflow_dispatch:
+    inputs:
+      jepa_epochs:
+        description: 'Epochs JEPA (défaut prod: 300)'
+        required: false
+        default: '300'
+      recommender_epochs:
+        description: 'Epochs Recommender (défaut prod: 100)'
+        required: false
+        default: '100'
 
 jobs:
   retrain:
@@ -50,7 +59,7 @@ jobs:
         run: |
           python -m training.train \
             --data data/processed \
-            --epochs 300 \
+            --epochs ${{ github.event.inputs.jepa_epochs || '300' }} \
             --batch_size 64 \
             --num_workers 2 \
             --log_every 50 \
@@ -61,7 +70,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           python -m training.train_recommender \
-            --epochs 100 \
+            --epochs ${{ github.event.inputs.recommender_epochs || '100' }} \
             --batch_size 64 \
             --num_workers 2 \
             --log_every 10 \
