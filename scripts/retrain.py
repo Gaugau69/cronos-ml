@@ -43,10 +43,10 @@ def retrain(
 
     python = f'"{sys.executable}"'
 
-    # ── 1. Export Supabase ──
+    # ── 1. Export Railway ──
     ok = run(
         f'{python} -m scripts.export_training_data --output data/raw --db_url "{db_url}"',
-        "1/4 Export depuis Supabase"
+        "1/4 Export depuis Railway"
     )
     if not ok:
         sys.exit(1)
